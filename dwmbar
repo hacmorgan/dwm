@@ -1,0 +1,56 @@
+#!/bin/zsh
+
+# simple utility to generate a string and write it to the dwm bar
+
+# each function is responsible for its own formatting, and is only given |'s on either
+# side of it
+
+RED='\033[0;31m'
+NC='\033[0m' # No Color
+
+function xset()
+{
+    xsetroot -name "$@"
+}
+
+
+function get_time()
+{
+    date
+}
+
+function get_battery()
+{
+    level="$(cat /home/hamish/scratch/.battery_level)"
+    echo "Battery: $level%"
+}
+
+function get_network()
+{
+    ip="$(ip a | grep -e "inet " | grep -v "127" | sed 's/^.*inet //g;s/\/.*//g;s/\n/, /g')"
+    echo "IP(s): $ip"
+}
+
+function get_CPU()
+{
+    cpup="$(ps -A -o pcpu | tail -n+2 | paste -sd+ | bc)%"
+    clockspeed="$(echo $(( $(cat /proc/cpuinfo | grep MHz | sed 's/[a-zA-z: \t]//g' | paste -sd+ | bc) / 4000 )) | cut -c -5) GHz"
+    echo "CPU: $cpup, Clock Speed: $clockspeed" 
+}
+
+function get_thermal()
+{
+    temp="$(( $(cat /sys/class/thermal/thermal_zone0/temp) / 1000 ))"
+    echo "Temperature: $temp°C"
+}
+
+
+function main()
+{
+    while true; do
+        xset " $(get_CPU) | $(get_thermal) | $(get_network) | $(get_battery) | $(get_time) "
+        sleep 2
+    done
+}
+
+main
