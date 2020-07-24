@@ -1,54 +1,155 @@
 #!/bin/zsh
 
+
 # simple utility to generate a string and write it to the dwm bar
 
 # each function is responsible for its own formatting, and is only given |'s on either
 # side of it
 
-RED='\033[0;31m'
-NC='\033[0m' # No Color
 
 function xset()
 {
     xsetroot -name "$@"
 }
 
+function say()
+{
+    echo -e "$@"
+}
+
+function notify()
+{
+    echo -e "\x02$@\x01"
+}
+
+function warn()
+{
+    echo -e "\x03$@\x01"
+}
+
+function urgent()
+{
+    echo -e "\x04$@\x01"
+}
+
 
 function get_time()
 {
-    date
+    datestr="$( date | cut -d' ' -f1-3 )"
+    timestr="$( date | cut -d' ' -f4 )"
+    zonestr="$( date | cut -d' ' -f5,6 )"
+    fullstr="$( say "$datestr" ; notify "$timestr" ; say "$zonestr" )"
+    say "$fullstr" | paste -sd' '
 }
 
 function get_battery()
 {
     level="$(cat /home/hamish/scratch/.battery_level)"
-    echo "Battery: $level%"
+    level_str="Battery: $level%"
+    if (( level > 50 )); then
+        say $level_str
+    elif (( level > 30 )); then
+        notify $level_str
+    elif (( level > 15 )); then
+        warn $level_str
+    else "Battery: $level%"
+        urgent $level_str
+    fi
 }
 
 function get_network()
 {
     ip="$(ip a | grep -e "inet " | grep -v "127" | sed 's/^.*inet //g;s/\/.*//g;s/\n/, /g')"
-    echo "IP(s): $ip"
+    if [[ $ip == "" ]]; then
+        warn "Not Connected!"
+    else
+        say "IP(s): $ip"
+    fi
 }
 
 function get_CPU()
 {
-    cpup="$(ps -A -o pcpu | tail -n+2 | paste -sd+ | bc)%"
-    clockspeed="$(echo $(( $(cat /proc/cpuinfo | grep MHz | sed 's/[a-zA-z: \t]//g' | paste -sd+ | bc) / 4000 )) | cut -c -5) GHz"
-    echo "CPU: $cpup, Clock Speed: $clockspeed" 
+    cpup="$(ps -A -o pcpu | tail -n+2 | paste -sd+ | bc)"
+    cpup_str="CPU: $cpup%"
+    if (( cpup > 250 )); then
+        urgent "$cpup_str"
+    elif (( cpup > 125 )); then
+        warn "$cpup_str"
+    elif (( cpup > 50 )); then
+        notify "$cpup_str"
+    else
+        say "$cpup_str"
+    fi
+}
+
+function get_clockspeed()
+{
+    clockspeed=$(( $(cat /proc/cpuinfo | grep MHz | sed 's/[a-zA-z: \t]//g' | paste -sd+ | bc) / 4000 ))
+    clockspeed_str="Clock Speed: $(echo $clockspeed | cut -c -5) GHz"
+    if (( clockspeed > 2.2 )); then
+        urgent "$clockspeed_str"
+    elif (( clockspeed > 1.6 )); then
+        warn "$clockspeed_str"
+    elif (( clockspeed > 1.2 )); then
+        notify "$clockspeed_str"
+    else
+        say "$clockspeed_str"
+    fi
 }
 
 function get_thermal()
 {
     temp="$(( $(cat /sys/class/thermal/thermal_zone0/temp) / 1000 ))"
-    echo "Temperature: $temp°C"
+    temp_str="Temperature: $temp°C"
+    if (( temp > 50 )); then
+       urgent "$temp_str"
+    elif (( temp > 45 )); then
+        warn "$temp_str"
+    elif (( temp > 40 )); then
+        notify "$temp_str"
+    else
+        say "$temp_str"
+    fi
 }
 
+function get_volume()
+{
+	volume=$( pulsemixer --get-volume | cut -d' ' -f1 )
+	volume_str="Volume: $volume%"
+	if (( volume <= 0 )); then
+		say "$volume_str"
+	elif (( volume <= 50)); then
+		say "$volume_str"
+	elif (( volume <= 100)); then
+		notify "$volume_str"
+	elif (( volume <= 150)); then
+		warn "$volume_str"
+	else
+		urgent "$volume_str"
+	fi
+}
+
+function get_RAM()
+{
+	total_ram=$( free | grep Mem | sed 's/ \+/ /g' |cut -d' ' -f2 )
+	available_ram=$( free | grep Mem | sed 's/ \+/ /g' |cut -d' ' -f7 )
+	perc_free=$( echo $(( available_ram * 100.0 / total_ram )) | head -c5 )
+	ram_str="RAM: $perc_free% available"
+	if (( perc_free >= 50 )); then
+		say "$ram_str"
+	elif (( perc_free >= 25 )); then
+		notify "$ram_str"
+	elif (( perc_free >= 10 )); then
+		warn "$ram_str"
+	else
+		urgent "$ram_str"
+	fi
+}
 
 function main()
 {
     while true; do
-        xset " $(get_CPU) | $(get_thermal) | $(get_network) | $(get_battery) | $(get_time) "
+		xset " $(get_RAM) | $(get_CPU) | $(get_clockspeed) | $(get_thermal) | $(get_network) | $(get_battery) | $(get_volume) | $(get_time) "
         sleep 2
     done
 }

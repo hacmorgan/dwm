@@ -1,7 +1,7 @@
 /* See LICENSE file for copyright and license details. */
 
 /* appearance */
-static const unsigned int borderpx  = 1;        /* border pixel of windows */
+static const unsigned int borderpx  = 2;        /* border pixel of windows */
 static const unsigned int snap      = 32;       /* snap pixel */
 static const unsigned int gappih    = 20;       /* horiz inner gap between windows */
 static const unsigned int gappiv    = 20;       /* vert inner gap between windows */
@@ -17,11 +17,22 @@ static const char col_gray2[]       = "#444444";
 static const char col_gray3[]       = "#bbbbbb";
 static const char col_gray4[]       = "#eeeeee";
 static const char col_cyan[]        = "#005577";
-static const char col_purple[]        = "#6a1878";
+static const char col_purple[]      = "#d800ff";
+static const char col_green[]       = "#00ff3c";
+static const char col_black[]       = "#000000";
+static const char col_red[]         = "#ff3c00";
+static const char col_yellow[]      = "#b3ff00";
+static const char col_white[]       = "#ffffff";
 static const char *colors[][3]      = {
-	/*               fg         bg         border   */
-	[SchemeNorm] = { col_gray3, col_gray1, col_gray2 },
-	[SchemeSel]  = { col_gray4, col_purple,  col_purple  },
+	/*					fg         bg          border   */
+	[SchemeNorm] =	 { col_gray3,  col_gray1, col_gray2 },
+	[SchemeSel]  =	 { col_purple, col_gray1, col_purple },
+	[SchemeWarn] =	 { col_yellow, col_gray1, col_red },
+	[SchemeUrgent]=	 { col_red,    col_gray1, col_red },
+	// [SchemeGreen]=	 { col_green,  col_gray1, col_red },
+	/* [SchemeSel]  =	 { col_gray4, col_purple,   col_purple }, */
+	/* [SchemeWarn] =	 { col_black, col_yellow, col_red }, */
+	/* [SchemeUrgent]=	 { col_white, col_red,    col_red }, */
 };
 
 /* tagging */
